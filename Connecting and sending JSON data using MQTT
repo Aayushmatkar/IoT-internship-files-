@@ -1,0 +1,94 @@
+#include <iostream>
+#include <cstdlib>
+#include "project_header.h"
+
+using namespace samplejson;
+
+void processMessages (int TopicLen, char *Topic, int MsgLen, char *Msg)
+{
+    printf("Received Messages\n\tFrom Topic: %s,\n\t Message: %s", Topic, Msg);
+}
+
+void mqttDemo (const char *Topic)
+{
+  FILE *xd;
+
+    if((xd = fopen("../config.json", "r")) == NULL) 
+    {
+        printf("JSON file not opened!");
+        exit(0);
+    }
+char mqtt_data[500];
+fgets(mqtt_data,500,fp);
+
+fclose(xd);
+mqttObj mqttBroker = newMqtt("mqttSettings");
+mqttConnect(&mqttBroker);
+mqttPublish(&mqttBroker, topic, "%s", mqtt_data);
+mqttSetSubCallback(&mqttBroker, processMessages);
+mqttSubscribe(&mqttBroker, topic);
+mqttDisconnect(&mqttBroker);
+}
+void configureWifiEth (const char *wifi_file, const char *eth_file)
+{
+  FILE *xd;
+  if((xd = fopen("example.json", "rb")) == NULL)
+  {
+        printf("JSON file not opened!");
+        exit(1);
+    }
+char readBuffer[65536];
+d.ParseStream(is);
+Value& ssid = d["internet"]["ssid"];
+char *wifi_ssid = (char *)ssid.GetString();
+Value& password = d["internet"]["password"];
+char *wifi_psk = (char *)password.GetString();
+
+Value& alloc = d["ethernet"]["allocation"];
+char *eth_alloc = (char *)alloc.GetString();
+
+Value& ip_addr = d["ethernet"]["ipAddress"]; 
+char *eth_ip_addr = (char *)ip_addr.GetString();
+
+Value& netmask = d["ethernet"]["subnetMask"]; 
+char *eth_netmask = (char *)netmask.GetString();
+
+Value& router_addr = d["ethernet"]["routerAddress"];
+char *eth_router_addr = (char *)router_addr.GetString();
+
+
+    char wifi_conf[100];
+    char eth_conf[200];
+    sprintf(wifi_conf,
+    "network={\\n\
+    ssid=\\\"%s\\\"\\n\
+    psk=\\\"%s\\\"\\n}",
+    wifi_ssid,
+    wifi_psk);
+    sprintf(eth_conf,
+    "\\nauto eth0\\niface eth0 inet \\\"%s\\\"\\n\
+    address \\\"%s\\\"\\n\
+    netmask \\\"%s\\\"\\n\
+    gateway \\\"%s\\\"",
+    eth_alloc,
+    eth_ip_addr,
+    eth_netmask,
+    eth_router_addr);
+    fclose(xd);
+    if((xd = popen("sudo su","w")) == NULL) {
+        printf("Root shell opening error\n");
+        exit(2);
+    }
+    fprintf(xd, "echo -e \"%s\" >> %s \n", wifi_conf, wifi_file);
+    fprintf(xd, "echo -e \"%s\" >> %s \n", eth_conf, eth_file);
+    fprintf(xd, "exit\n");
+    fclose(xd);
+}
+int main (void) 
+{
+    initLib();
+    mqttDemo("pi/orientation");
+    configureWifiEth("/etc/wpa_supplicant/wpa_supplicant.conf", "/etc/network/interfaces");
+
+    return 0;
+}
